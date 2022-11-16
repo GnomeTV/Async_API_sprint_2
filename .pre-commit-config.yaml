@@ -1,0 +1,11 @@
+repos:
+-   repo: local
+    hooks:
+    -   id: flake8
+        name: flake8
+        description: flake8
+        entry: flake8
+        args: ["--config=setup.cfg"]
+        exclude: migrations
+        language: python
+        types: [python]
