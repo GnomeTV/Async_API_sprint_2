@@ -149,6 +149,7 @@ class FilmService:
         try:
             films = await self._film_list_from_cache(page=page, page_size=page_size, filter_genre=filter_genre,
                                                      query=query, sort=sort)
+            print('**************************************************888')
         except ConnectionError as e:
             films = None
             logger.error(e)
