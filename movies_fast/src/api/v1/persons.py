@@ -11,7 +11,7 @@ PERSON_404 = "Person(s) not found"
 PERSON_FILMS_404 = "Films for person not found"
 
 
-def get_sq_params(
+def get_pg_params(
     page_num: int | None = Query(1, alias="page[number]", ge=1),
     page_size: int | None = Query(10, alias="page[size]", ge=1),
 ) -> PageParams:
@@ -31,10 +31,10 @@ def get_sq_params(
 )
 async def person_search(
     person_service: PersonService = Depends(get_person_service),
-    qp: PageParams = Depends(get_sq_params),
+    qp: PageParams = Depends(get_pg_params),
     query: str = Query(""),
 ) -> list[PersonInfo]:
-    persons = await person_service.get_person_list(query, qp.page_num, qp.page_size)
+    persons = await person_service.search_person(query, qp.page_num, qp.page_size)
     if not persons:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail=PERSON_404,
@@ -55,7 +55,7 @@ async def person_search(
 async def person_films(
     person_id: UUID,
     person_service: PersonService = Depends(get_person_service),
-    qp: PageParams = Depends(get_sq_params),
+    qp: PageParams = Depends(get_pg_params),
 ) -> list[MovieShortInfo]:
     films = await person_service.get_pers_films(person_id, qp.page_num, qp.page_size)
     if not films:
