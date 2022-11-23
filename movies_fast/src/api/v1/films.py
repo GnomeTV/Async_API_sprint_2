@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from uuid import UUID
 
 from api.v1.schemas import Film, SquareBracketsParams
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -54,6 +55,29 @@ async def prepare_film_result(film) -> Film:
     )
 
 
+@router.get("/search",
+            response_model=list[Film],
+            summary='Поиск кинопроизведений',
+            description='Поиск кинопроизведений по слову в названии',
+            response_description='Список кинопроизведений с названием, рейтингом, жанрами, актерами, '
+                                 'сценаристами и режиссерами',
+            tags=['Полнотекстовый поиск'])
+async def list_films_query(query: str | None,
+                     film_service: FilmService = Depends(get_film_service),
+                     qp: SquareBracketsParams = Depends(get_sq_params),
+                     sort: str = "-imdb_rating") -> list[Film]:
+    films = await film_service.get_by_query(page=qp.page_num, page_size=qp.page_size, filter_genre=qp.filter_genre,
+                                            sort=sort, query=query)
+    if not films:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=FILMS_404)
+
+    result = []
+    for item in films:
+        result.append(await prepare_film_result(item))
+
+    return result
+
+
 @router.get("/{film_id}",
             response_model=Film,
             summary='Поиск кинопроизведений',
@@ -61,7 +85,7 @@ async def prepare_film_result(film) -> Film:
             response_description='Кинопроизведение с названием, рейтингом, жанрами, актерами, '
                                  'сценаристами и режиссерами',
             tags=['Полнотекстовый поиск'])
-async def film_details(film_id: str, film_service: FilmService = Depends(get_film_service), ) -> Film:
+async def film_details(film_id: UUID, film_service: FilmService = Depends(get_film_service), ) -> Film:
     film = await film_service.get_by_id(film_id)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=FILMS_404)
@@ -81,29 +105,6 @@ async def list_films(film_service: FilmService = Depends(get_film_service),
                      sort: str = "-imdb_rating") -> list[Film]:
     films = await film_service.get_by_query(page=qp.page_num, page_size=qp.page_size, filter_genre=qp.filter_genre,
                                             sort=sort, query=None)
-    if not films:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=FILMS_404)
-
-    result = []
-    for item in films:
-        result.append(await prepare_film_result(item))
-
-    return result
-
-
-@router.get("/search/",
-            response_model=list[Film],
-            summary='Поиск кинопроизведений',
-            description='Поиск кинопроизведений по слову в названии',
-            response_description='Список кинопроизведений с названием, рейтингом, жанрами, актерами, '
-                                 'сценаристами и режиссерами',
-            tags=['Полнотекстовый поиск'])
-async def list_films_query(query: str | None,
-                     film_service: FilmService = Depends(get_film_service),
-                     qp: SquareBracketsParams = Depends(get_sq_params),
-                     sort: str = "-imdb_rating") -> list[Film]:
-    films = await film_service.get_by_query(page=qp.page_num, page_size=qp.page_size, filter_genre=qp.filter_genre,
-                                            sort=sort, query=query)
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=FILMS_404)
 

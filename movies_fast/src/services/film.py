@@ -1,18 +1,16 @@
-import json
-import logging
 from functools import lru_cache
-from typing import Optional
+import logging
 from uuid import UUID
 
-from aioredis import Redis
-from aioredis.exceptions import ConnectionError
-from db.elastic import get_elastic
-from db.redis import get_redis
-from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
+
+from db.abs_storages import BaseCacheStorage, BaseDbStorage
+from db.elastic import get_elastic, ElasticStorage
+from db.redis import get_redis, RedisCacheStorage
 from models.film import Film
 from models.genre import Genre
 from models.person import Person
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,76 +18,17 @@ FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
 
 
 class FilmService:
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
-        self.elastic = elastic
+    def __init__(self, cache_stor: BaseCacheStorage, db_stor: BaseDbStorage):
+        self.cache_stor = cache_stor
+        self.db_stor = db_stor
 
     @staticmethod
-    async def get_elastic_query(filter_genre: Optional[UUID] = None,
-                                page: int = 0,
-                                page_size: int = 10,
-                                query: Optional[str] = None,
-                                sort: str = '-imdb_rating') -> dict:
-        query_result = {
-            "size": page_size,
-            "from": page,
-            "sort": [
-                {
-                    "imdb_rating": {
-                        "order": "desc"
-                    }
-                }
-            ]
-        }
-        if filter_genre:
-            query_result['query'] = {
-                "bool": {
-                    "filter": {
-                        "nested": {
-                            "path": "genre",
-                            "query": {
-                                "term": {
-                                    "genre.id": f"{filter_genre}"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        if query_result.get('query') and query:
-            query_result['query']['bool'].update({
-                "must": {
-                    "fuzzy": {
-                        "title": {
-                            "value": f"{query}",
-                            "fuzziness": "AUTO"
-                        }
-                    }
-                }
-            })
-        elif query:
-            query_result['query'] = {
-                "bool": {
-                    "must": {
-                        "fuzzy": {
-                            "title": {
-                                "value": f"{query}",
-                                "fuzziness": "AUTO"
-                            }
-                        }
-                    }
-                }
-            }
-
-        if sort == '+imdb_rating':
-            query_result['sort'][0]['imdb_rating']['order'] = "asc"
-
-        return query_result
-
-    @staticmethod
-    async def _compile_redis_key(page: int, page_size: int, filter_genre: Optional[UUID], query: Optional[str],
-                                 sort: str) -> str:
+    def _compile_cache_key(page: int,
+                           page_size: int,
+                           filter_genre: UUID | None,
+                           query: str | None,
+                           sort: str,
+                           ) -> str:
         return f'page[number]:={page}&' \
                f'page[size]:={page_size}&' \
                f'filter[genre]:={filter_genre}&' \
@@ -97,18 +36,27 @@ class FilmService:
                f'sort:={sort}'
 
     @staticmethod
-    async def _prepare_film_result(film: dict) -> Film:
+    def _prepare_film_result(film: dict) -> Film:
         genres = []
         for item in film['genre']:
             genres.append(Genre(id=item['id'], name=item['name'], description=''))
 
         persons = []
         for item in film['actors']:
-            persons.append(Person(id=item['id'], full_name=item['name'], role='actor'))
+            persons.append(Person(id=item['id'],
+                                  full_name=item['name'],
+                                  role='actor'),
+                           )
         for item in film['writers']:
-            persons.append(Person(id=item['id'], full_name=item['name'], role='writer'))
+            persons.append(Person(id=item['id'],
+                                  full_name=item['name'],
+                                  role='writer'),
+                           )
         for item in film['directors']:
-            persons.append(Person(id=item['id'], full_name=item['name'], role='director'))
+            persons.append(Person(id=item['id'],
+                                  full_name=item['name'],
+                                  role='director'),
+                           )
 
         return Film(
             id=film['id'],
@@ -124,115 +72,75 @@ class FilmService:
             modified=None
         )
 
-    async def get_by_id(self, film_id: Optional[str]) -> Optional[Film]:
-        try:
-            film = await self._film_from_cache(film_id)
-        except ConnectionError as e:
-            film = None
-            logger.error(e)
-
+    async def get_by_id(self, film_id: UUID | None) -> Film | None:
+        film = await self.cache_stor.get_object(film_id)
         if not film:
-            film = await self._get_film_from_elastic(film_id)
+            film = await self.db_stor.get_film(film_id)
             if not film:
                 return None
-
-            await self._put_film_to_cache(film)
-
+            await self.cache_stor.save_object(film_id, film)
+        film = self._prepare_film_result(film)
         return film
 
     async def get_by_query(self,
-                           page: Optional[int],
-                           page_size: Optional[int],
-                           filter_genre: Optional[UUID],
-                           query: Optional[str],
-                           sort: str = '-imdb_rating') -> Optional[list[Film]]:
-        try:
-            films = await self._film_list_from_cache(page=page, page_size=page_size, filter_genre=filter_genre,
-                                                     query=query, sort=sort)
-        except ConnectionError as e:
-            films = None
-            logger.error(e)
-
+                           page: int | None = 1,
+                           page_size: int | None = 10,
+                           filter_genre: UUID | None = None,
+                           query: str | None = None,
+                           sort: str = '-imdb_rating') -> list[Film] | None:
+        if page is None or page < 1:
+            page = 1
+        if page_size is None or page_size < 1:
+            page_size = 10
+        cache_key = self._compile_cache_key(page=page,
+                                            page_size=page_size,
+                                            filter_genre=filter_genre,
+                                            query=query,
+                                            sort=sort,
+                                            )
+        films = await self.cache_stor.get_list_objects(cache_key)
         if not films:
-            films = await self._get_film_list_from_elastic(filter_genre=filter_genre, page_size=page_size,
-                                                           page=page, query=query, sort=sort)
+            films = await self.db_stor.search_film(query=query,
+                                                   filter_genre=filter_genre,
+                                                   offset=page_size * (page - 1),
+                                                   limit=page_size,
+                                                   sort=sort,
+                                                   )
             if not films:
                 return None
+            await self.cache_stor.save_list_objects(cache_key, films)
+        return [self._prepare_film_result(film) for film in films]
 
-            await self._put_film_list_to_cache(page=page, page_size=page_size, filer_genre=filter_genre, sort=sort,
-                                               films=films, query=query)
+# Ниже определяется тип хранилища и кэша, с которыми будет работать FilmService.
+# Нужно подготовить и отдать переменные с объектами хранилищ в создаваемый класс.
+# При желании можно написать классы для других хранилищ и передавать объекты этих
+# классов в создаваемый объект класса FilmService
 
-        return films
 
-    async def _get_film_list_from_elastic(self,
-                                          query: Optional[str],
-                                          filter_genre: Optional[UUID],
-                                          page: int = 0,
-                                          page_size: int = 10,
-                                          sort: str = '-imdb_rating') -> Optional[list[Film]]:
-        try:
-            query = await self.get_elastic_query(filter_genre=filter_genre, page_size=page_size, page=page, sort=sort,
-                                                 query=query)
-            doc = await self.elastic.search(index="movies", body=query)
-        except NotFoundError:
-            return None
-        films = []
-        for item in doc['hits']['hits']:
-            film = await self._prepare_film_result(item['_source'])
-            films.append(film)
-        return films
+# объявляем один объект на модуль
+redis_cache_film: RedisCacheStorage | None = None
+elastic_film: ElasticStorage | None = None
 
-    async def _get_film_from_elastic(self, film_id: str) -> Optional[Film]:
-        try:
-            doc = await self.elastic.get(index="movies", id=film_id)
-        except NotFoundError:
-            return None
-        film = doc["_source"]
-        return await self._prepare_film_result(film)
 
-    async def _film_from_cache(self, film_id: str) -> Optional[Film]:
-        data = await self.redis.get(film_id)
-        if not data:
-            return None
+async def get_redis_cache() -> RedisCacheStorage:
+    global redis_cache_film
+    if redis_cache_film is None:
+        redis = await get_redis()
+        redis_cache_film = RedisCacheStorage(redis, FILM_CACHE_EXPIRE_IN_SECONDS)
+    return redis_cache_film
 
-        film = Film.parse_raw(data)
-        return film
 
-    async def _film_list_from_cache(self,
-                                    page: int,
-                                    page_size: int,
-                                    filter_genre: UUID,
-                                    query: Optional[str],
-                                    sort: str = '-imdb_rating') -> Optional[list[Film]]:
-        key = await self._compile_redis_key(page=page, page_size=page_size, filter_genre=filter_genre, query=query,
-                                            sort=sort)
-        data = await self.redis.get(key)
-        if not data:
-            return None
-        data = json.loads(data)
-        films = []
-        for item in data:
-            films.append(Film.parse_raw(item))
-
-        return films
-
-    async def _put_film_to_cache(self, film: Film):
-        await self.redis.set(str(film.id), film.json())
-
-    async def _put_film_list_to_cache(self,
-                                      page: int,
-                                      page_size: int,
-                                      filer_genre: Optional[UUID],
-                                      query: Optional[str],
-                                      sort: str,
-                                      films: Optional[list[Film]]):
-        key = await self._compile_redis_key(page=page, page_size=page_size, filter_genre=filer_genre, query=query,
-                                            sort=sort)
-        films_json = [film.json() for film in films]
-        await self.redis.set(key, json.dumps(films_json))
+async def get_elastic_stor() -> ElasticStorage:
+    global elastic_film
+    if elastic_film is None:
+        elastic_conn = await get_elastic()
+        elastic_film = ElasticStorage(elastic_conn)
+    return elastic_film
 
 
 @lru_cache()
-def get_film_service(redis: Redis = Depends(get_redis),
-                     elastic: AsyncElasticsearch = Depends(get_elastic), ) -> FilmService:
-    return FilmService(redis, elastic)
+def get_film_service(
+    cache_db: BaseCacheStorage = Depends(get_redis_cache),
+    storage_db: BaseDbStorage = Depends(get_elastic_stor),
+) -> FilmService:
+    return FilmService(cache_db, storage_db)

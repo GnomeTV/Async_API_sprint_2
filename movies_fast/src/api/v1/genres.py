@@ -10,10 +10,11 @@ router = APIRouter()
 GENRES_404 = "Genre(s) not found"
 
 
-def get_sq_params(
+def get_pg_params(
     page_num: int | None = Query(1, alias="page[number]", ge=1),
     page_size: int | None = Query(10, alias="page[size]", ge=1),
 ) -> PageParams:
+    """Возвращает значения параметров пагинации с кв. скобками."""
     return PageParams(
         page_num=page_num,
         page_size=page_size,
@@ -48,7 +49,7 @@ async def genre_details(
 )
 async def genre_list(
     genre_service: GenreService = Depends(get_genre_service),
-    qp: PageParams = Depends(get_sq_params),
+    qp: PageParams = Depends(get_pg_params),
 ) -> list[Genre]:
     genres = await genre_service.get_genre_list(qp.page_num, qp.page_size)
     if not genres:
