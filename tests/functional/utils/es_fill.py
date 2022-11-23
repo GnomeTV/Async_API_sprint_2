@@ -1,9 +1,4 @@
-import asyncio
 import json
-
-from elasticsearch import AsyncElasticsearch
-
-from tests.functional.settings import es_setting
 
 
 def get_es_bulk_query(data, es_index) -> list[str]:
@@ -14,4 +9,3 @@ def get_es_bulk_query(data, es_index) -> list[str]:
             json.dumps(row)
         ])
     return bulk_query
-
