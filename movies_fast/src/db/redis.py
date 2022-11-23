@@ -54,9 +54,6 @@ class RedisCacheStorage(BaseCacheStorage):
         return list(json.loads(data))
 
     async def save_list_objects(self, key: str, objs: list[dict]) -> None:
-        # обход ошибки сериализации UUID, пока не нужно
-        # for obj in objs:
-        #    obj["id"] = str(obj["id"])
         try:
             await self.redis.set(key, json.dumps(objs), ex=self.expire_timeout)
         except ConnectionError as e:

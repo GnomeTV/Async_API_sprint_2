@@ -42,7 +42,6 @@ class ElasticStorage(BaseDbStorage):
 
     async def get_person_details(self, person_id: UUID) -> dict | None:
         """Получить детали персоны (фильмы, роли) по id."""
-        # строка запроса к индексу фильмов
         el_query = json.loads(GET_PERSON_FILMS.replace("%pers_id%", str(person_id)))
         try:
             doc = await self.elastic.search(index=MOVIES_INDEX,
@@ -54,10 +53,7 @@ class ElasticStorage(BaseDbStorage):
         film_ids = set()
         roles = set()
         for item in doc.raw["hits"]["hits"]:
-            # забираем id фильма в список
             film_ids.add(item["_id"])
-            # перебираем словари с актёрами, сценаристами и режиссёрами
-            # и ищем, кем была запрошенная персона
             role_types = ("actors", "writers", "directors")
             for role_type in role_types:
                 persons = item["_source"][role_type]
@@ -117,10 +113,8 @@ class ElasticStorage(BaseDbStorage):
             )
         except NotFoundError:
             return None
-        # собираем фильмы персонажа в список
         films = []
         for item in doc.raw["hits"]["hits"]:
-            # id фильма
             film = {
                 "id": item["_id"],
                 "title": item["_source"]["title"],

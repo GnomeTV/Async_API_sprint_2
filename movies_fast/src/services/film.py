@@ -79,7 +79,6 @@ class FilmService:
             if not film:
                 return None
             await self.cache_stor.save_object(film_id, film)
-        # преобразовываем в модель
         film = self._prepare_film_result(film)
         return film
 
@@ -110,7 +109,6 @@ class FilmService:
             if not films:
                 return None
             await self.cache_stor.save_list_objects(cache_key, films)
-        # возвращаем список моделей
         return [self._prepare_film_result(film) for film in films]
 
 # Ниже определяется тип хранилища и кэша, с которыми будет работать FilmService.
