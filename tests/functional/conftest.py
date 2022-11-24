@@ -1,5 +1,4 @@
 import asyncio
-from typing import List
 from urllib.parse import urljoin
 
 import aiohttp
@@ -32,11 +31,11 @@ def es_client(session_event_loop):
 
 @pytest_asyncio.fixture
 def es_write_data(es_client):
-    async def inner(data: List[dict], es_index):
+    async def inner(data: list[dict], es_index):
         try:
             await es_client.indices.create(index=es_index, body=films_index_body)
         except RequestError as e:
-            print('index already exist')
+            print('index already exists')
         bulk_query = get_es_bulk_query(data=data, es_index=es_index)
         str_query = '\n'.join(bulk_query) + '\n'
         response = await es_client.bulk(str_query, refresh=True)

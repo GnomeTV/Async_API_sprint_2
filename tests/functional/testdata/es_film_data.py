@@ -2,15 +2,20 @@ import json
 import uuid
 from datetime import datetime
 
-with open("/home/ivan/Desktop/practicum/Async_API_sprint_2/tests/functional/testdata/es_index_movies.json", "rt") as f:
+with open("functional/testdata/es_index_movies.json", "rt") as f:
     films_index_body = json.load(f)
 
+
+def get_id():
+    return str(uuid.uuid4())
+
+
 all_films_data = [{
-    'id': str(uuid.uuid4()),
+    'id': get_id(),
     'imdb_rating': 8.5,
     'genre': [
-        {'id': str(uuid.uuid4()), 'name': 'Comedy'},
-        {'id': str(uuid.uuid4()), 'name': 'Fantasy'}
+        {'id': get_id(), 'name': 'Comedy'},
+        {'id': get_id(), 'name': 'Fantasy'}
     ],
     'title': 'The Star',
     'description': 'New World',
@@ -18,23 +23,23 @@ all_films_data = [{
     'actors_names': ['Ann', 'Bob'],
     'writers_names': ['Ben', 'Howard'],
     'actors': [
-        {'id': str(uuid.uuid4()), 'name': 'Ann'},
-        {'id': str(uuid.uuid4()), 'name': 'Bob'}
+        {'id': get_id(), 'name': 'Ann'},
+        {'id': get_id(), 'name': 'Bob'}
     ],
     'writers': [
-        {'id': str(uuid.uuid4()), 'name': 'Ben'},
-        {'id': str(uuid.uuid4()), 'name': 'Howard'}
+        {'id': get_id(), 'name': 'Ben'},
+        {'id': get_id(), 'name': 'Howard'}
     ],
     'directors': [
-        {'id': str(uuid.uuid4()), 'name': 'Stan'},
+        {'id': get_id(), 'name': 'Stan'},
     ],
 } for _ in range(60)]
 
 film_by_id = [{
-    'id': str(uuid.uuid4()),
+    'id': get_id(),
     'imdb_rating': 2.0,
     'genre': [
-        {'id': str(uuid.uuid4()), 'name': 'Comedy'},
+        {'id': get_id(), 'name': 'Comedy'},
     ],
     'title': 'Star wars',
     'description': 'Smth',
@@ -42,22 +47,22 @@ film_by_id = [{
     'actors_names': ['Ann'],
     'writers_names': ['Ben'],
     'actors': [
-        {'id': str(uuid.uuid4()), 'name': 'Ann'},
+        {'id': get_id(), 'name': 'Ann'},
     ],
     'writers': [
-        {'id': str(uuid.uuid4()), 'name': 'Ben'},
+        {'id': get_id(), 'name': 'Ben'},
     ],
     'directors': [
-        {'id': str(uuid.uuid4()), 'name': 'Stan'},
+        {'id': get_id(), 'name': 'Stan'},
     ],
 }]
 
 rating_test_data = [
     {
-        'id': str(uuid.uuid4()),
+        'id': get_id(),
         'imdb_rating': 2.0,
         'genre': [
-            {'id': str(uuid.uuid4()), 'name': 'Comedy'},
+            {'id': get_id(), 'name': 'Comedy'},
         ],
         'title': 'Star wars',
         'description': 'Smth',
@@ -65,20 +70,20 @@ rating_test_data = [
         'actors_names': ['Ann'],
         'writers_names': ['Ben'],
         'actors': [
-            {'id': str(uuid.uuid4()), 'name': 'Ann'},
+            {'id': get_id(), 'name': 'Ann'},
         ],
         'writers': [
-            {'id': str(uuid.uuid4()), 'name': 'Ben'},
+            {'id': get_id(), 'name': 'Ben'},
         ],
         'directors': [
-            {'id': str(uuid.uuid4()), 'name': 'Stan'},
+            {'id': get_id(), 'name': 'Stan'},
         ],
     },
     {
-        'id': str(uuid.uuid4()),
+        'id': get_id(),
         'imdb_rating': 8.0,
         'genre': [
-            {'id': str(uuid.uuid4()), 'name': 'Comedy'},
+            {'id': get_id(), 'name': 'Comedy'},
         ],
         'title': 'Star wars',
         'description': 'Smth',
@@ -86,13 +91,13 @@ rating_test_data = [
         'actors_names': ['Ann'],
         'writers_names': ['Ben'],
         'actors': [
-            {'id': str(uuid.uuid4()), 'name': 'Ann'},
+            {'id': get_id(), 'name': 'Ann'},
         ],
         'writers': [
-            {'id': str(uuid.uuid4()), 'name': 'Ben'},
+            {'id': get_id(), 'name': 'Ben'},
         ],
         'directors': [
-            {'id': str(uuid.uuid4()), 'name': 'Stan'},
+            {'id': get_id(), 'name': 'Stan'},
         ],
     }
 ]
