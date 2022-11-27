@@ -2,14 +2,15 @@ import asyncio
 from urllib.parse import urljoin
 
 import aiohttp
+import aioredis
 import pytest
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import RequestError, NotFoundError
 
-from settings import es_setting, service_setting
-from testdata.es_film_data import films_index_body
-from utils.es_fill import get_es_bulk_query
+from functional.settings import es_setting, service_setting, redis_setting
+from functional.testdata.es_film_data import films_index_body
+from functional.utils.es_fill import get_es_bulk_query
 
 
 @pytest.fixture(scope="session")
@@ -31,14 +32,14 @@ def es_client(session_event_loop):
 
 @pytest_asyncio.fixture
 def es_write_data(es_client):
-    async def inner(data: list[dict], es_index):
+    async def inner(data: list[dict], es_index, index_def=films_index_body):
         try:
-            await es_client.indices.create(index=es_index, body=films_index_body)
+            await es_client.indices.create(index=es_index, body=index_def)
         except RequestError as e:
             print('index already exists')
         bulk_query = get_es_bulk_query(data=data, es_index=es_index)
         str_query = '\n'.join(bulk_query) + '\n'
-        response = await es_client.bulk(str_query, refresh=True)
+        response = await es_client.bulk(body=str_query, refresh=True)
         if response['errors']:
             raise Exception('Ошибка записи данных в Elasticsearch')
 
@@ -56,7 +57,14 @@ def es_del_index(es_client):
     return inner
 
 
-@pytest_asyncio.fixture()
+@pytest.fixture(scope='session')
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope='session')
 async def session():
     session = aiohttp.ClientSession()
     yield session
@@ -74,3 +82,14 @@ def make_get_request(session):
             return status, body
 
     return inner
+
+
+@pytest_asyncio.fixture(scope='session', autouse=True)
+async def redis() -> aioredis.Redis:
+    redis = aioredis.from_url(redis_setting.redis_host,
+                              encoding="utf-8",
+                              decode_responses=True,
+                              )
+    await redis.flushall()
+    yield redis
+    # закрывать соединения редиса не надо - они закрываются автоматически
