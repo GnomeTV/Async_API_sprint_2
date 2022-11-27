@@ -1,3 +1,10 @@
+Rep url: https://github.com/GnomeTV/Async_API_sprint_2
+
+# Разворачивание тестов
+1) Создать .env файлы и заполнить их в tests/functional
+2) ```docker-compose up -d --build```
+
+
 # Проектная работа 5 спринта
 
 В папке **tasks** ваша команда найдёт задачи, которые необходимо выполнить во втором спринте модуля "Сервис Async API".
