@@ -1,8 +1,7 @@
 import json
 import uuid
-from datetime import datetime
 
-with open("functional/testdata/es_index_movies.json", "rt") as f:
+with open("./testdata/es_index_movies.json", "rt") as f:
     films_index_body = json.load(f)
 
 
@@ -60,7 +59,7 @@ film_by_id = [{
 rating_test_data = [
     {
         'id': get_id(),
-        'imdb_rating': 2.0,
+        'imdb_rating': 1.0,
         'genre': [
             {'id': get_id(), 'name': 'Comedy'},
         ],
@@ -167,8 +166,6 @@ search_star_data = [
         ],
     }
 ]
-
-
 
 genre_id = get_id()
 search_star_genre_data = [

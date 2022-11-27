@@ -23,7 +23,7 @@ def session_event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 def es_client(session_event_loop):
-    client = AsyncElasticsearch(hosts=es_setting.es_host,
+    client = AsyncElasticsearch(hosts=f'{es_setting.scheme}://{es_setting.host}:{es_setting.port}',
                                 validate_cert=False,
                                 use_ssl=False)
     yield client
@@ -86,7 +86,7 @@ def make_get_request(session):
 
 @pytest_asyncio.fixture(scope='session', autouse=True)
 async def redis() -> aioredis.Redis:
-    redis = aioredis.from_url(redis_setting.redis_host,
+    redis = aioredis.from_url(f'{redis_setting.scheme}://{redis_setting.host}:{redis_setting.port}',
                               encoding="utf-8",
                               decode_responses=True,
                               )
