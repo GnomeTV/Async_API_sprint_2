@@ -52,7 +52,7 @@ class ElasticStorage(BaseDbStorage):
             return None
         film_ids = set()
         roles = set()
-        for item in doc.raw["hits"]["hits"]:
+        for item in doc["hits"]["hits"]:
             film_ids.add(item["_id"])
             role_types = ("actors", "writers", "directors")
             for role_type in role_types:
@@ -78,7 +78,7 @@ class ElasticStorage(BaseDbStorage):
         except NotFoundError:
             return None
         genres = []
-        for item in doc.raw["hits"]["hits"]:
+        for item in doc["hits"]["hits"]:
             genres.append(item["_source"])
         return genres
 
@@ -96,7 +96,7 @@ class ElasticStorage(BaseDbStorage):
             )
         except NotFoundError:
             return None
-        return [item["_source"] for item in doc.raw["hits"]["hits"]]
+        return [item["_source"] for item in doc["hits"]["hits"]]
 
     async def get_pers_films(
         self,
@@ -114,7 +114,7 @@ class ElasticStorage(BaseDbStorage):
         except NotFoundError:
             return None
         films = []
-        for item in doc.raw["hits"]["hits"]:
+        for item in doc["hits"]["hits"]:
             film = {
                 "id": item["_id"],
                 "title": item["_source"]["title"],
@@ -141,7 +141,7 @@ class ElasticStorage(BaseDbStorage):
             doc = await self.elastic.search(index=MOVIES_INDEX, body=query_el)
         except NotFoundError:
             return None
-        return [item["_source"] for item in doc.raw["hits"]["hits"]]
+        return [item["_source"] for item in doc["hits"]["hits"]]
 
     async def _get_obj_by_id(self, obj_id: UUID, index_name: str) -> dict | None:
         """Возвращает элемент указанного индекса по id."""
