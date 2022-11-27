@@ -2,7 +2,7 @@ from urllib.parse import urljoin
 
 import pytest
 
-from tests.functional.testdata.es_film_data import film_by_id, all_films_data, rating_test_data
+from functional.testdata.es_film_data import film_by_id, all_films_data, rating_test_data
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,7 @@
 import json
 import uuid
-from datetime import datetime
 
-with open("functional/testdata/es_index_movies.json", "rt") as f:
+with open("./testdata/es_index_movies.json", "rt") as f:
     films_index_body = json.load(f)
 
 
@@ -60,7 +59,7 @@ film_by_id = [{
 rating_test_data = [
     {
         'id': get_id(),
-        'imdb_rating': 2.0,
+        'imdb_rating': 1.0,
         'genre': [
             {'id': get_id(), 'name': 'Comedy'},
         ],
@@ -102,4 +101,135 @@ rating_test_data = [
     }
 ]
 
+search_star_data = [
+    {
+        'id': get_id(),
+        'imdb_rating': 8.0,
+        'genre': [
+            {'id': get_id(), 'name': 'Comedy'},
+        ],
+        'title': 'Star wars',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    },
+    {
+        'id': get_id(),
+        'imdb_rating': 9.0,
+        'genre': [
+            {'id': get_id(), 'name': 'Comedy'},
+        ],
+        'title': 'Test',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    },
+    {
+        'id': get_id(),
+        'imdb_rating': 1.0,
+        'genre': [
+            {'id': get_id(), 'name': 'Comedy'},
+        ],
+        'title': 'Star wars 2',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    }
+]
 
+genre_id = get_id()
+search_star_genre_data = [
+    {
+        'id': get_id(),
+        'imdb_rating': 8.0,
+        'genre': [
+            {'id': genre_id, 'name': 'Comedy'},
+        ],
+        'title': 'Star wars',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    },
+    {
+        'id': get_id(),
+        'imdb_rating': 9.0,
+        'genre': [
+            {'id': genre_id, 'name': 'Comedy'},
+        ],
+        'title': 'Star wars 3',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    },
+    {
+        'id': get_id(),
+        'imdb_rating': 1.0,
+        'genre': [
+            {'id': get_id(), 'name': 'WTF'},
+        ],
+        'title': 'Star wars 2',
+        'description': 'Smth',
+        'director': ['Stan'],
+        'actors_names': ['Ann'],
+        'writers_names': ['Ben'],
+        'actors': [
+            {'id': get_id(), 'name': 'Ann'},
+        ],
+        'writers': [
+            {'id': get_id(), 'name': 'Ben'},
+        ],
+        'directors': [
+            {'id': get_id(), 'name': 'Stan'},
+        ],
+    }
+]
