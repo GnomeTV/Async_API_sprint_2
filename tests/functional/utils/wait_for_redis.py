@@ -1,6 +1,9 @@
 import time
-from settings import redis_setting
+
 import aioredis
+from aioredis.exceptions import ConnectionError as RedisConError
+
+from settings import redis_setting
 
 if __name__ == '__main__':
     redis = aioredis.from_url(f'{redis_setting.scheme}://{redis_setting.host}:{redis_setting.port}',
@@ -8,6 +11,8 @@ if __name__ == '__main__':
                               decode_responses=True,
                               )
     while True:
-        if redis.ping():
+        try:
+            redis.ping()
             break
-        time.sleep(1)
+        except RedisConError:
+            time.sleep(1)

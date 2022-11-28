@@ -2,4 +2,6 @@
 
 set -e
 sleep 10
-python src/main.py
+
+cd src
+gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
