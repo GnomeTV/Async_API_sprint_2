@@ -40,7 +40,9 @@ async def mov_and_pers_idx(es_write_data):
 async def test_person_by_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет, что персона успешно получается по id."""
     pers_id = persons_data[0]["id"]
+
     status, body = await make_get_request(urljoin(f"{HANDLE}/", pers_id))
+
     assert status == HTTPStatus.OK
     assert body["id"] == pers_id
 
@@ -51,6 +53,7 @@ async def test_pers_by_invalid_id(make_get_request, del_indices, mov_and_pers_id
     Валидация UUID в FastAPI должна вернуть ошибку 422 - UNPROCESSABLE_ENTITY.
     """
     status, body = await make_get_request(f"{HANDLE}/some_wrong_id")
+
     assert status == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
@@ -58,6 +61,7 @@ async def test_pers_by_invalid_id(make_get_request, del_indices, mov_and_pers_id
 async def test_pers_by_notfound_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет ответ с id, которого нет в индексе."""
     status, body = await make_get_request(f"{HANDLE}/{ZERO_UUID}")
+
     assert status == HTTPStatus.NOT_FOUND
 
 
@@ -67,10 +71,12 @@ async def test_search_pers(make_get_request, del_indices, mov_and_pers_idx, redi
     # сброс кэша, т.к. при повторных запусках тестов генерятся разные UUID
     # для фильмов и персон, а кэшированная ручка может извлечь старые
     await redis.flushdb()
+    georges_ids = {persons_data[0]["id"], persons_data[1]["id"]}
+
     status, body = await make_get_request(f"{HANDLE}/search", {"query": "george"})
+
     assert status == HTTPStatus.OK
     assert len(body) == 2
-    georges_ids = {persons_data[0]["id"], persons_data[1]["id"]}
     assert body[0]["id"] in georges_ids
     assert body[1]["id"] in georges_ids
 
@@ -80,6 +86,7 @@ async def test_search_impossible(make_get_request, del_indices, mov_and_pers_idx
     """Тест поиска персоны по имени, которого нет."""
     status, body = await make_get_request(f"{HANDLE}/search",
                                           {"query": "Alexander Nevsky"})
+
     assert status == HTTPStatus.NOT_FOUND
 
 
@@ -89,10 +96,12 @@ async def test_films_by_pers_id(make_get_request, del_indices, mov_and_pers_idx)
     Ищем фильмы Лукаса, в тестовом наборе он в первых двух фильмах.
     """
     pers_id = persons_data[0]["id"]
+    lucas_film_ids = {pers_film_data[0]["id"], pers_film_data[1]["id"]}
+
     status, body = await make_get_request(f"{HANDLE}/{pers_id}/film")
+
     assert status == HTTPStatus.OK
     assert len(body) == 2
-    lucas_film_ids = {pers_film_data[0]["id"], pers_film_data[1]["id"]}
     assert body[0]["id"] in lucas_film_ids
     assert body[1]["id"] in lucas_film_ids
 
@@ -101,6 +110,7 @@ async def test_films_by_pers_id(make_get_request, del_indices, mov_and_pers_idx)
 async def test_films_by_notfound_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест ищет фильмы несуществующей персоны."""
     status, body = await make_get_request(f"{HANDLE}/{ZERO_UUID}/film")
+
     assert status == HTTPStatus.NOT_FOUND
 
 
@@ -110,11 +120,16 @@ async def test_pers_id_cache(make_get_request, mov_and_pers_idx, es_del_index):
     новый запрос. Ожидается, что кэш вернёт идентичный ответ.
     """
     request = urljoin(f"{HANDLE}/", persons_data[-1]["id"])
+
     status, body_el = await make_get_request(request)
+
     assert status == HTTPStatus.OK
+
     await es_del_index(PERSONS_INDEX)
     await es_del_index(MOVIES_INDEX)
+
     status, body = await make_get_request(request)
+
     assert status == HTTPStatus.OK
     assert body == body_el
 
@@ -131,11 +146,16 @@ async def test_person_search_from_cache(make_get_request,
                   "page[number]": 1,
                   "query": "george"
                   }
+
     status, body_el = await make_get_request(f"{HANDLE}/search", req_params)
+
     assert status == HTTPStatus.OK
+
     await es_del_index(PERSONS_INDEX)
     await es_del_index(MOVIES_INDEX)
+
     status, body = await make_get_request(f"{HANDLE}/search", req_params)
+
     assert status == HTTPStatus.OK
     assert body == body_el
 
@@ -152,10 +172,15 @@ async def test_pers_films_from_cache(make_get_request,
                   "page[number]": 1,
                   }
     pers_id = persons_data[0]["id"]
+
     status, body_el = await make_get_request(f"{HANDLE}/{pers_id}/film", req_params)
+
     assert status == HTTPStatus.OK
+
     await es_del_index(PERSONS_INDEX)
     await es_del_index(MOVIES_INDEX)
+
     status, body = await make_get_request(f"{HANDLE}/{pers_id}/film", req_params)
+
     assert status == HTTPStatus.OK
     assert body == body_el

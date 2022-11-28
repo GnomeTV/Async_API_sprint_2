@@ -38,7 +38,9 @@ async def test_genre_by_id(make_get_request,
                            ):
     """Тест проверяет, что жанр успешно получается по id."""
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
+
     status, body = await make_get_request(urljoin(f"{HANDLE}/", query_data["genre_id"]))
+
     assert status == expected_answer["status"]
     assert body["id"] == expected_answer["id"]
 
@@ -49,7 +51,9 @@ async def test_genre_by_invalid_id(make_get_request, es_write_data, del_genres_i
     Валидация UUID в FastAPI должна вернуть ошибку 422 - UNPROCESSABLE_ENTITY.
     """
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
+
     status, body = await make_get_request(f"{HANDLE}/some_wrong_id")
+
     assert status == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
@@ -57,7 +61,9 @@ async def test_genre_by_invalid_id(make_get_request, es_write_data, del_genres_i
 async def test_genre_by_notfound_id(make_get_request, es_write_data, del_genres_idx):
     """Тест проверяет ответ с id, которого нет в индексе."""
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
+
     status, body = await make_get_request(f"{HANDLE}/{ZERO_UUID}")
+
     assert status == HTTPStatus.NOT_FOUND
 
 
@@ -67,7 +73,9 @@ async def test_all_genres(make_get_request, es_write_data, del_genres_idx):
     Предполагается, что в тестовом наборе их меньше запрошенных 50 на страницу.
     """
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
+
     status, body = await make_get_request(HANDLE, {'page[size]': 50})
+
     assert status == HTTPStatus.OK
     assert len(body) == len(genres_data)
 
@@ -77,11 +85,13 @@ async def test_genres_pagination(make_get_request, es_write_data, del_genres_idx
     """Тест проверяет, что вернётся страница с запрошенным размером."""
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
     page_size = 10
+
     status, body = await make_get_request(HANDLE,
                                           {"page[size]": page_size,
                                            "page[number]": 1
                                            }
                                           )
+
     assert status == HTTPStatus.OK
     assert len(body) == page_size
 
@@ -93,10 +103,15 @@ async def test_genre_id_cache(make_get_request, es_write_data, es_del_index):
     """
     await es_write_data(genres_data, GENRES_INDEX, genres_index_body)
     request = urljoin(f"{HANDLE}/", genres_data[-1]["id"])
+
     status, _ = await make_get_request(request)
+
     assert status == HTTPStatus.OK
+
     await es_del_index(GENRES_INDEX)
+
     status, body = await make_get_request(request)
+
     assert status == HTTPStatus.OK
     assert body["id"] == genres_data[-1]["id"]
 
@@ -110,9 +125,14 @@ async def test_genre_list_from_cache(make_get_request, es_write_data, es_del_ind
     req_params = {"page[size]": 3,
                   "page[number]": 2
                   }
+
     status, body_el = await make_get_request(HANDLE, req_params)
+
     assert status == HTTPStatus.OK
+
     await es_del_index(GENRES_INDEX)
+
     status, body = await make_get_request(HANDLE, req_params)
+
     assert status == HTTPStatus.OK
     assert body == body_el
