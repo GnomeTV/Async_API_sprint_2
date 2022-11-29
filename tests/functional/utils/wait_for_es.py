@@ -1,7 +1,7 @@
 import time
 
 from elasticsearch import Elasticsearch
-from settings import es_setting
+from functional.settings import es_setting
 
 if __name__ == '__main__':
     es_client = Elasticsearch(hosts=f'{es_setting.scheme}://{es_setting.host}:{es_setting.port}',
