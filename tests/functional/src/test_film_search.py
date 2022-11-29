@@ -2,6 +2,8 @@ import pytest
 
 from functional.testdata.es_film_data import rating_test_data, search_star_data, genre_id, search_star_genre_data
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.parametrize(
     'query_data, expected_answer',
@@ -12,11 +14,12 @@ from functional.testdata.es_film_data import rating_test_data, search_star_data,
         ),
     ]
 )
-@pytest.mark.asyncio
 async def test_search_star_films(make_get_request, es_del_index, es_write_data, query_data, expected_answer):
     await es_del_index('movies')
     await es_write_data(search_star_data, 'movies')
+
     status, body = await make_get_request('films/search', query_data)
+
     assert status == expected_answer['status']
     assert len(body) == expected_answer['size']
 
@@ -30,11 +33,12 @@ async def test_search_star_films(make_get_request, es_del_index, es_write_data, 
         ),
     ]
 )
-@pytest.mark.asyncio
 async def test_search_rating_films(make_get_request, es_del_index, es_write_data, query_data, expected_answer):
     await es_del_index('movies')
     await es_write_data(rating_test_data, 'movies')
+
     status, body = await make_get_request('films/search', query_data)
+
     assert status == expected_answer['status']
     assert len(body) == expected_answer['size']
     assert body[0]['imdb_rating'] == expected_answer['min_rating']
@@ -49,11 +53,12 @@ async def test_search_rating_films(make_get_request, es_del_index, es_write_data
         ),
     ]
 )
-@pytest.mark.asyncio
 async def test_search_film_genre(make_get_request, es_write_data, es_del_index, query_data, expected_answer):
     await es_del_index('movies')
     await es_write_data(search_star_genre_data, 'movies')
+
     status, body = await make_get_request('films/search', query_data)
+
     assert status == expected_answer['status']
     assert len(body) == expected_answer['size']
 
@@ -67,12 +72,13 @@ async def test_search_film_genre(make_get_request, es_write_data, es_del_index, 
         ),
     ]
 )
-@pytest.mark.asyncio
 async def test_search_film_genre_redis(make_get_request, es_write_data, es_del_index, query_data, expected_answer):
     await es_del_index('movies')
     await es_write_data(search_star_genre_data, 'movies')
     await es_del_index('movies')
+
     status, body = await make_get_request('films/search', query_data)
+
     assert status == expected_answer['status']
     assert len(body) == expected_answer['size']
 
@@ -86,9 +92,10 @@ async def test_search_film_genre_redis(make_get_request, es_write_data, es_del_i
         ),
     ]
 )
-@pytest.mark.asyncio
 async def test_search_film_error(make_get_request, es_write_data, es_del_index, query_data, expected_answer):
     await es_del_index('movies')
     await es_write_data(search_star_genre_data, 'movies')
+
     status, _ = await make_get_request('films/search', query_data)
+
     assert status == expected_answer['status']

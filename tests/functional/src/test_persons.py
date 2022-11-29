@@ -12,11 +12,12 @@ from functional.testdata.es_person_data import (
     pers_film_data,
 )
 
-
 PERSONS_INDEX = "persons"
 MOVIES_INDEX = "movies"
 HANDLE = "persons"
 ZERO_UUID = "00000000-0000-0000-0000-000000000000"
+
+pytestmark = pytest.mark.asyncio
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -36,7 +37,6 @@ async def mov_and_pers_idx(es_write_data):
     await es_write_data(pers_film_data, MOVIES_INDEX, films_index_body)
 
 
-@pytest.mark.asyncio
 async def test_person_by_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет, что персона успешно получается по id."""
     pers_id = persons_data[0]["id"]
@@ -47,7 +47,6 @@ async def test_person_by_id(make_get_request, del_indices, mov_and_pers_idx):
     assert body["id"] == pers_id
 
 
-@pytest.mark.asyncio
 async def test_pers_by_invalid_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет ответ с некорректным id.
     Валидация UUID в FastAPI должна вернуть ошибку 422 - UNPROCESSABLE_ENTITY.
@@ -57,7 +56,6 @@ async def test_pers_by_invalid_id(make_get_request, del_indices, mov_and_pers_id
     assert status == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.asyncio
 async def test_pers_by_notfound_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет ответ с id, которого нет в индексе."""
     status, body = await make_get_request(f"{HANDLE}/{ZERO_UUID}")
@@ -65,7 +63,6 @@ async def test_pers_by_notfound_id(make_get_request, del_indices, mov_and_pers_i
     assert status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.asyncio
 async def test_search_pers(make_get_request, del_indices, mov_and_pers_idx, redis):
     """Тест поиска персоны по имени. В тестовом наборе два Джорджа."""
     # сброс кэша, т.к. при повторных запусках тестов генерятся разные UUID
@@ -81,7 +78,6 @@ async def test_search_pers(make_get_request, del_indices, mov_and_pers_idx, redi
     assert body[1]["id"] in georges_ids
 
 
-@pytest.mark.asyncio
 async def test_search_impossible(make_get_request, del_indices, mov_and_pers_idx):
     """Тест поиска персоны по имени, которого нет."""
     status, body = await make_get_request(f"{HANDLE}/search",
@@ -90,7 +86,6 @@ async def test_search_impossible(make_get_request, del_indices, mov_and_pers_idx
     assert status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.asyncio
 async def test_films_by_pers_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест проверяет, что по id персоны успешно находятся её фильмы.
     Ищем фильмы Лукаса, в тестовом наборе он в первых двух фильмах.
@@ -106,7 +101,6 @@ async def test_films_by_pers_id(make_get_request, del_indices, mov_and_pers_idx)
     assert body[1]["id"] in lucas_film_ids
 
 
-@pytest.mark.asyncio
 async def test_films_by_notfound_id(make_get_request, del_indices, mov_and_pers_idx):
     """Тест ищет фильмы несуществующей персоны."""
     status, body = await make_get_request(f"{HANDLE}/{ZERO_UUID}/film")
@@ -114,7 +108,6 @@ async def test_films_by_notfound_id(make_get_request, del_indices, mov_and_pers_
     assert status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.asyncio
 async def test_pers_id_cache(make_get_request, mov_and_pers_idx, es_del_index):
     """Тест запрашивает персону по id, очищает индекс эластика и делает
     новый запрос. Ожидается, что кэш вернёт идентичный ответ.
@@ -134,7 +127,6 @@ async def test_pers_id_cache(make_get_request, mov_and_pers_idx, es_del_index):
     assert body == body_el
 
 
-@pytest.mark.asyncio
 async def test_person_search_from_cache(make_get_request,
                                         mov_and_pers_idx,
                                         es_del_index,
@@ -160,11 +152,10 @@ async def test_person_search_from_cache(make_get_request,
     assert body == body_el
 
 
-@pytest.mark.asyncio
 async def test_pers_films_from_cache(make_get_request,
-                                        mov_and_pers_idx,
-                                        es_del_index,
-                                        ):
+                                     mov_and_pers_idx,
+                                     es_del_index,
+                                     ):
     """Тест запрашивает фильмы персоны (с заданной пагинацией), удаляет
     индекс эластика и делает новый запрос. Ответ из кэша должен быть идентичен.
     """
