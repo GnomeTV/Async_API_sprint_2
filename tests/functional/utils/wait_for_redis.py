@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import aioredis
@@ -5,7 +6,8 @@ from aioredis.exceptions import ConnectionError as RedisConError
 
 from functional.settings import redis_setting
 
-if __name__ == '__main__':
+
+async def wait_redis():
     redis = aioredis.from_url(f'{redis_setting.scheme}://{redis_setting.host}:{redis_setting.port}',
                               encoding="utf-8",
                               decode_responses=True,
@@ -16,3 +18,7 @@ if __name__ == '__main__':
             break
         except RedisConError:
             time.sleep(1)
+
+
+if __name__ == '__main__':
+    asyncio.run(wait_redis())

@@ -74,7 +74,9 @@ async def session():
 @pytest_asyncio.fixture
 def make_get_request(session):
     async def inner(method: str, params: dict | None = None):
-        url = urljoin(service_setting.service_url, service_setting.api_version)
+        url = urljoin(f'{service_setting.scheme}://{service_setting.host}:{service_setting.port}',
+                      service_setting.api_version
+                      )
         method_url = urljoin(url, method)
         async with session.get(method_url, params=params) as response:
             body = await response.json()

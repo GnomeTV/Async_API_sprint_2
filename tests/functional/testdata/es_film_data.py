@@ -1,7 +1,7 @@
 import json
 import uuid
 
-with open("./testdata/es_index_movies.json", "rt") as f:
+with open("functional/testdata/es_index_movies.json", "rt") as f:
     films_index_body = json.load(f)
 
 
