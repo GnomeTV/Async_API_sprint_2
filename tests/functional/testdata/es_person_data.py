@@ -2,7 +2,6 @@ import json
 
 from functional.utils.funcs import gen_id
 
-
 # Логика тестовых данных: два Джорджа (для нечёткого поиска)
 # Три фильма: в первом George Lucas - режиссёр и сценарист, во втором - режиссёр
 # в третьем фильме никого.
@@ -75,5 +74,5 @@ pers_film_data = [
     },
 ]
 
-with open("./testdata/es_index_id_name.json", "rt") as f:
+with open("functional/testdata/es_index_id_name.json", "rt") as f:
     persons_index_body = json.load(f)

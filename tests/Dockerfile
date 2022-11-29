@@ -1,9 +1,9 @@
 FROM python:3.10
 
-WORKDIR /opt/api
-ENV PYTHONPATH=/opt/api/src
+WORKDIR /opt/tests
+ENV PYTHONPATH=/opt/tests
 
-COPY requirements.txt requirements.txt
+COPY functional/requirements.txt requirements.txt
 RUN  pip install --upgrade pip \
      && pip install -r requirements.txt
 
